@@ -1,0 +1,325 @@
+a = figure('KeyPressFcn',@interrupcion,'name','meausered_data','position',[200,50,600,600]);%% xi y xf 
+a.Color = [0 0 1];
+global xBall;
+global yBall;
+global radio;
+global Ball;
+global xSpeedBall;
+global ySpeedBall;
+global anchoEsc;
+global altoEsc;
+
+global playerRigth;
+global anchoPlayer;
+global altoPlayer;
+    
+global playerRiPosX;
+global playerRiPosY;
+global speedPlaR;
+global plaRiAncho;
+global plaRiAlto;
+global y;
+global x;
+
+
+%ancho y alto del escenario
+anchoEsc = 30;
+altoEsc = 30;
+
+%ancho del jugador
+anchoPlayer = 0.5;
+altoPlayer = 0.5;
+
+%posicion inicaal de la pelota y su radio
+%respectivo
+xBall = 10;
+yBall = 10;
+radio = 1;
+
+%posicion x del jugador derecho
+playerRiPosX = 28;
+%posicion y del jugador derecho
+playerRiPosY = altoEsc/2;
+speedPlaR = 0;
+%ancho del jugador derecho
+plaRiAncho = 0.5;
+%alto del jugador derecho
+plaRiAlto = 3;
+
+global axis;
+axis = axes;
+axis.GridAlpha = 0.5
+axis.Color = 'white'
+axis.XLim = [0,30]
+axis.YLim = [0,30]
+
+%recuadro para un diseño mejor
+set (axis,'position',[0.05 0.28 0.7 0.7])
+
+% rectangle('position',[0 0 25 25],'FaceColor','w');
+grid on
+grid minor
+
+matriz = zeros
+
+%%se crea los objetos bola y player
+Ball = rectangle('position',[xBall yBall radio radio],'curvature',[1 1],'FaceColor','w');
+playerRigth = rectangle('position',[playerRiPosX,playerRiPosY,plaRiAncho,plaRiAlto],'FaceColor','b');
+
+xSpeedBall = 1;
+ySpeedBall = 1;
+
+datos = 15000;
+
+x = zeros(1,datos);
+y = zeros(1,datos);
+k1 = 0
+
+valor = 1;
+bolaValor = 0;
+
+while(true) 
+    
+    %esto se definio para que el codigo entrene la red neuronal
+    %obviar esto y hacer uso de la funcion interrupcion si se quiere
+    %entrenar directamente
+    if(bolaValor >yBall)
+        valor = -1
+        bolaValor = yBall;
+    end
+        
+    if(bolaValor < yBall)
+       valor = 1 
+       bolaValor = yBall;
+    end
+    
+    k1 = k1+1;
+    %funcion que detecta la colision de la pelota con el jugador
+    colisionRigthPlayer();
+    %funcion que detecta la colision de la pelota con el escenario
+    colisionEscenario();
+    %funcion que mueve la pelota bong
+    moveBall();
+    %funcion que mueve el player en esta caso la funcion esta adecuada
+    %para que su entrenamiento sea solo es decir ya esta programada para
+    %que siga la pelota
+    movePlayR(k1,valor);
+    %posicioname el objeto playerRigth con la propiedad 'position' en los
+    %valores anteriormente cargados
+    set(playerRigth,'position',[playerRiPosX,playerRiPosY,plaRiAncho,plaRiAlto]);
+    %posicionamos el objeto pelota con la propiedad 'position' en los
+    %parametros anteriormente actualizados
+    set(Ball,'position',[xBall yBall radio radio]);
+    %establecemos condicion con la finalidad de salir del bucle while
+    %cuando las iteraciones definidas hayan pasado
+    if(k1 == datos)
+        %para no programadores break sale del blucle que esta establecido
+        %como infinito por que se le puso una conducion true
+        break
+    end
+    %adicionamos a la salida los movimientos que realizo el jugador, solo
+    %se tiene en cuenta el eje y ya que el eje x no cambia 
+    y(:,k1) = playerRiPosY;
+    %tomamos como entrada para la red neuronal la posicion en el eje
+    %de la pelota esto varia segun la determinacion de la persona
+    x(:,k1) = [yBall];
+    %tiempo antes de refrescar pantalla
+    if(k1 < 14949)
+       pause(.0001);
+    else
+         pause(0.3);
+    end
+
+end
+
+%cuando sale del bucle entrena la red neuronal que prosigue a las
+%siguientes lineas de codigo, tomando como parametros a (y) como salida y 
+%a (x) como entrada de la red neuronal 
+%rna_snake = newff(x,y,[8 32],{'tansig' 'purelin' });
+rna_snake = newff(x,y,[1],{'purelin' });
+%%hardlim %%hardlims
+%%purelin
+%%satlin %%satlins
+%%poslin
+%%logsig%%tansig
+%%redbas
+%%compet
+%%tribas
+%datos para entrenamiento 100%
+rna_snake.divideParam.trainRatio = 1;
+rna_snake.divideParam.valRatio = 0;
+rna_snake.divideParam.testRatio = 0;
+%numero de epocas
+rna_snake.trainParam.epochs = 500;
+%parametro de error al que more or less se quiere llegar
+rna_snake.trainParam.goal = 1e-6;
+%se entrena la red neuronal como salida obtendre un objeto rna_snake
+%cuyas propiedades me permitiran usarlo para evaluar la red ya entrenada
+rna_snake = train(rna_snake,x,y)
+
+%%
+%esta funcion determina cuando la pelota toca al jugador
+%generando asi un rebote
+function colisionRigthPlayer()
+%cargamos las variables globales
+global playerRiPosX;
+global playerRiPosY;
+global speedPlaR;
+global plaRiAncho;
+global plaRiAlto;
+global xSpeedBall;
+global ySpeedBall;
+global yBall;
+global xBall;
+global radio;
+
+   %en la primer condicion se evalua que la posicion de la pelota este en 
+   %en el intervalo de las (y) es decir que el area que ocupa el jugaor 
+   %este comprendido en la posicion (y) de la pelota y tambien evalua que 
+   %la posicion en (x) de la pelota no sea mayor que la posicion del 
+   %jugador si esta posicion es sobrepasa entonces existira un rebote
+   if(yBall+radio>=playerRiPosY && (playerRiPosY+plaRiAlto)>=(yBall) &&...
+       (xBall+radio) >= (playerRiPosX) && (xBall+radio) <= (playerRiPosX+plaRiAncho))
+        %aqui se divide en 3 el area y que ocupa el jugador con la finalidad 
+        %de saber en cual de los 3 lugares toco la pelota logrando asi que 
+        %la pelota no solo rebote en un lugar como se vera luego -> angulo
+        %tendra el equivalente de cada division del alto
+        angulo = (plaRiAlto)/3
+        %aqui la condicion inicial if fue true entonces existe rebote
+        xSpeedBall = -xSpeedBall;
+        %aqui se especifica en cual de las 2 de las 3 diviciones toca para
+        %asi variar el angulo de rebote
+        if((yBall+radio)>playerRiPosY && (yBall+radio)<playerRiPosY+angulo)
+            ySpeedBall = -1
+        else
+        %aqui se especifica en cual de las 2 de las 3 diviciones toca para
+        %asi variar el angulo de rebote
+             if((yBall+radio)>playerRiPosY+angulo &&(yBall+radio)<playerRiPosY+angulo*2)
+                ySpeedBall = 1
+             end
+        end
+   end
+end
+      
+%%
+%funcion que mueve el jugador hacia una determinada posicion
+%esta puede ser cambiada por el juego de una persona o por un programa que
+%le permita jugar por si sola para su propio entrenamiento como en este
+%caso :)
+
+function movePlayR(k1,speedPlaR)
+%cargamos las variables globales
+global playerRiPosY;
+% global speedPlaR;
+global y;
+global anchoEsc;
+global altoEsc;
+global plaRiAlto;
+
+if((playerRiPosY) <= 0 && speedPlaR == -1)
+   speedPlaR = 0;
+%     y(:,k1) = [speedPlaR];
+else
+    %si la posicion del jugador + la altura(se toma la altura por que la
+    %posicion que el objeto retorno es una y es la de abajo es por ello que
+    %se debe sumar la altura) es mayor que el alto del escenario y este
+    %esta subiendo entonces no lo deja subir mas o superara el escenario
+    if((playerRiPosY+plaRiAlto) >= altoEsc && speedPlaR == 1)
+%         y(:,k1) = [speedPlaR];
+        speedPlaR = 0;
+    else
+        %si ninguna de las condiciones anteriores es verdadera entonces se
+        %dejara mover al jugador libremente
+        playerRiPosY = playerRiPosY+speedPlaR;
+%         y(:,k1) = [speedPlaR];
+        %se reinicia speedPlaR ya que sino ocacionara que este se siga
+        %moviendo a lo largo del escenario
+        speedPlaR = 0; 
+        
+    end
+end
+    
+end
+    
+    
+  
+   
+    
+%%
+%funcion que evalua la colision con el escenario
+function colisionEscenario()
+%cargamos las variables globales
+global xBall;
+global yBall;
+global radio;
+global anchoEsc;
+global altoEsc;
+global xSpeedBall;
+global ySpeedBall;
+
+    %esta condicion determina que si la pelota mas el radion es mayor o
+    %igual al ancho del escenario este la hara rebotar por ende la posicion
+    %xSpeddBall toma un valor negativo
+    if((xBall+radio)>=(anchoEsc))
+        xSpeedBall = -xSpeedBall;
+    end
+    %esta condicion evalua que si la posicion de la pelota - radio es menor
+    %que la coordenada 0 del escenario entonces habra rebote logrando asi
+    %un cambio de sentido en la posicion de la pelota
+    if((xBall-radio)<0)
+        xSpeedBall = -xSpeedBall;
+    end
+    %las siguientes condiciones evaluan de igual manera de como se hizo con
+    %el eje x pero ahora solo cambia al eje y
+    if((yBall+radio)>=altoEsc)
+        ySpeedBall = -ySpeedBall;
+    end
+    if((yBall-radio)<0)
+        ySpeedBall = -ySpeedBall;
+    end
+end
+
+%%
+%funcion que mueve la pelota
+function moveBall()
+%cargamos las variables globales
+
+
+global xBall;
+global yBall;
+global xSpeedBall;
+global ySpeedBall;    
+    
+    %aqui solo se suma -1 o 1 a las posiciones tanto x como y logrando asi
+    %movimientos lineales 
+    xBall = xBall+xSpeedBall;
+    yBall = yBall+ySpeedBall;
+    
+end
+
+%esta funcion sirve para que una persona entre la red neuronal con las
+%teclas up y down del teclado para este proyecto se definio un
+%entrenamiento por codigo aunque hay que hacer pequeñas modificaciones para
+%que el movimiento lo realice una persona
+ function interrupcion(splooge,event)
+ global speedPlaR;
+%arriba 38 
+%abajo 40
+%izquierda 37
+%deerecha 39
+  switch event.Character
+      case 28
+            
+      case 30
+            speedPlaR = 1;
+      case 29 	
+            
+      case 31
+            speedPlaR = -1;
+  end 
+ end
+ 
+    
+
+
+
