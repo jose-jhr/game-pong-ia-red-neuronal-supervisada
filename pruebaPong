@@ -1,0 +1,318 @@
+a = figure('KeyPressFcn',@interrupcion,'name','meausered_data','position',[200,50,600,600]);%% xi y xf 
+a.Color = [0 0 0];
+
+
+puntaje = uicontrol(a,'Style','text',...
+    'String','Select a data set.',...
+    'Position',[240 560 130 30]);
+puntaje.String = 'Humano = 0 - Maquina = 0';
+
+
+global xBall;
+global yBall;
+global radio;
+global Ball;
+global xSpeedBall;
+global ySpeedBall;
+global anchoEsc;
+global altoEsc;
+
+global playerRigth;
+global anchoPlayerR;
+global altoPlayerR;
+
+global playerRiPosX;
+global playerRiPosY;
+global speedPlaR;
+global plaRiAncho;
+global plaRiAlto;
+
+%player 2
+global playerLeft;
+global anchoPlayerL;
+global altoPlayerL;
+
+global playerLePosX;
+global playerLePosY;
+global speedPlaL;
+global plaLeAncho;
+global plaLeAlto;
+
+global puntajePla1;
+global puntajePla2;
+
+
+global y;
+
+
+anchoEsc = 30;
+altoEsc = 30;
+
+anchoPlayerR = 0.5;
+altoPlayerR = 0.5;
+anchoPlayerL = 0.5;
+altoPlayerL = 0.5;
+
+xBall = 10;
+yBall = 10;
+radio = 1;
+
+
+
+%player 1
+playerRiPosX = 28;
+playerRiPosY = altoEsc/2;
+speedPlaR = 0;
+plaRiAncho = 0.5;
+plaRiAlto = 3;
+puntajePla1 = 0;
+
+%player 2
+playerLePosX = 2;
+playerLePosY = altoEsc/2;
+speedPlaL = 0;
+plaLeAncho = 0.5;
+plaLeAlto = 3;
+puntajePla2 = 0;
+
+global axis;
+axis = axes;
+axis.GridAlpha = 0.5
+axis.Color = 'white'
+axis.XLim = [0,30]
+axis.YLim = [0,30]
+
+set (axis,'position',[0.135 0.18 0.7 0.7])
+rectangle('position',[0 0 30 30],'FaceColor','w');
+grid on
+grid minor
+
+matriz = zeros
+
+Ball = rectangle('position',[xBall yBall radio radio],'curvature',[1 1],'FaceColor','w');
+playerRigth = rectangle('position',[playerRiPosX,playerRiPosY,plaRiAncho,plaRiAlto],'FaceColor','b');
+playerLeft = rectangle('position',[playerLePosX,playerLePosY,plaLeAncho,plaLeAlto],'FaceColor','r');
+
+xSpeedBall = 1;
+ySpeedBall = 1;
+x = zeros(2,500)
+y = zeros(1,500)
+k1 = 0
+
+while(true) 
+ 
+    colisionRigthPlayer();
+    set(playerRigth,'position',[playerRiPosX,playerRiPosY,plaRiAncho,plaRiAlto]);
+    colisionLeftPlayer();
+    set(playerLeft,'position',[playerLePosX,playerLePosY,plaLeAncho,plaLeAlto]);
+    colisionEscenario();
+    moveBall();
+    set(Ball,'position',[xBall yBall radio radio]);
+%     xt = [xBall yBall (playerRiPosY)]'
+    xt = [yBall]
+    dir = round(sim(rna_snake,xt))
+    
+    if(playerRiPosY>dir)
+        dir = -1
+    else
+    if(playerRiPosY<dir)
+        dir = 1
+    else
+        if(playerRiPosY==dir)
+        dir = 0
+        end
+        
+    end
+    end
+    
+    
+%     dir = min(max(round(sim(rna_snake,xt)),-1),1)
+    movePlayR(dir);
+    movePlayL();
+    pause(0.1);
+   
+    
+%     set(playerRigth,'position',[playerRiPosX,playerRiPosY,plaRiAncho,plaRiAlto]);
+%     set(Ball,'position',[xBall yBall radio radio]);
+%     set(playerLeft,'position',[playerLePosX,playerLePosY,plaLeAncho,plaLeAlto]);
+    puntaje.String = strcat('Humano =  ',num2str(puntajePla1),' - ',...
+    ' Maquina  =  ', num2str(puntajePla2));
+    
+end
+
+function colisionLeftPlayer()
+global playerLePosX;
+global playerLePosY;
+global speedPlaL;
+global plaLeAncho;
+global plaLeAlto;
+global xSpeedBall;
+global ySpeedBall;
+global yBall;
+global xBall;
+global radio;
+    
+   if(yBall+radio>=playerLePosY && (playerLePosY+plaLeAlto)>=(yBall) &&...
+       (xBall-radio) <= (playerLePosX) && (xBall+radio) >= (playerLePosX+plaLeAncho))
+        angulo = (plaLeAlto)/3
+        xSpeedBall = -xSpeedBall;
+        if((yBall+radio)>playerLePosY && (yBall+radio)<playerLePosY+angulo)
+            ySpeedBall = -1
+        else
+             if((yBall+radio)>playerLePosY+angulo &&(yBall+radio)<playerLePosY+angulo*2)
+                ySpeedBall = 1
+             end
+        end
+   end
+end
+
+
+function colisionRigthPlayer()
+global playerRiPosX;
+global playerRiPosY;
+global speedPlaR;
+global plaRiAncho;
+global plaRiAlto;
+global xSpeedBall;
+global ySpeedBall;
+global yBall;
+global xBall;
+global radio;
+    
+   if(yBall+radio>=playerRiPosY && (playerRiPosY+plaRiAlto)>=(yBall) &&...
+       (xBall+radio) >= (playerRiPosX) && (xBall-radio) <= (playerRiPosX+plaRiAncho))
+        angulo = (plaRiAlto)/3
+        xSpeedBall = -xSpeedBall;
+        if((yBall+radio)>playerRiPosY && (yBall+radio)<playerRiPosY+angulo)
+            ySpeedBall = -1
+        else
+             if((yBall+radio)>playerRiPosY+angulo &&(yBall+radio)<playerRiPosY+angulo*2)
+                ySpeedBall = 1
+             end
+        end
+   end
+end
+            
+
+function movePlayL()
+global playerLePosY;
+global speedPlaL;
+global plaLeAlto;
+global altoEsc;
+global y;
+
+if((playerLePosY) <= 0 && speedPlaL == -1)
+   speedPlaL = 0;
+else
+    if((playerLePosY+plaLeAlto) >= altoEsc && speedPlaL == 1)
+        speedPlaL = 0;
+    else
+        playerLePosY = playerLePosY+speedPlaL;
+        speedPlaL = 0; 
+        
+    end
+end
+end
+
+
+function movePlayR(k1)
+global playerRiPosY;
+global speedPlaR;
+global plaRiAlto;
+global altoEsc;
+global y;
+
+if((playerRiPosY) <= 0 && k1 == -1)
+   k1 = 0;
+else
+    if((playerRiPosY+plaRiAlto) >= altoEsc && k1 == 1)
+        k1 = 0;
+    else
+        playerRiPosY = playerRiPosY+k1;
+        k1 = 0
+        speedPlaR = 0; 
+        
+    end
+end
+end
+
+function colisionEscenario()
+global xBall;
+global yBall;
+global radio;
+global anchoEsc;
+global altoEsc;
+global xSpeedBall;
+global ySpeedBall;
+
+global puntajePla1;
+global puntajePla2;
+
+
+    if((xBall+radio)>=(anchoEsc))
+        xSpeedBall = -xSpeedBall;
+        puntajePla1 = puntajePla1+1;
+        xBall = 10;
+        yBall = 10;
+        xSpeedBall = 1;
+        
+    end
+    if((xBall-radio)<0)
+        xSpeedBall = -xSpeedBall;
+        puntajePla2 = puntajePla2+1;
+        xBall = 10;
+        yBall = 10;
+        xSpeedBall = 1;
+    end
+    if((yBall+radio)>=altoEsc)
+%         if(xSpeedBall>0)
+%             xSpeedBall = xSpeedBall+1;
+%         else
+%             xSpeedBall = xSpeedBall-1;
+%         end
+        ySpeedBall = -ySpeedBall;
+        
+    end
+    if((yBall-radio)<0)
+%         if(xSpeedBall>0)
+%             xSpeedBall = xSpeedBall+1;
+%         else
+%             xSpeedBall = xSpeedBall-1;
+%         end
+        ySpeedBall = -ySpeedBall;
+        
+    end
+    
+end
+
+function moveBall()
+global xBall;
+global yBall;
+global xSpeedBall;
+global ySpeedBall;    
+
+    xBall = xBall+xSpeedBall;
+    yBall = yBall+ySpeedBall;
+    
+end
+
+ function interrupcion(splooge,event)
+ global speedPlaR;
+ global speedPlaL
+%arriba 38 
+%abajo 40
+%izquierda 37
+%deerecha 39
+  switch event.Character
+      case 28
+            
+      case 30
+            %speedPlaR = 1;
+            speedPlaL = 1
+      case 29 	
+            
+      case 31
+            speedPlaL = -1
+            %speedPlaR = -1;
+  end 
+ end
